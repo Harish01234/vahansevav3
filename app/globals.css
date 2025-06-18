@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme - core colors */
+    --color-bg: #d4d4d4;
+    --color-text: #1a1a1a;
+    --color-accent: #fb4f93;
+    --color-muted: #6b7280;
+    
+    /* Light theme - derived colors with opacity */
+    --color-border: rgba(107, 114, 128, 0.2);
+    --color-hover: rgba(251, 79, 147, 0.08);
+    --color-focus: rgba(251, 79, 147, 0.2);
+  }
+
+  .dark {
+    /* Dark theme - core colors */
+    --color-bg: #18181b;
+    --color-text: #f8fafc;
+    --color-accent: #fb4f93;
+    --color-muted: #a1a1aa;
+    
+    /* Dark theme - derived colors with opacity */
+    --color-border: rgba(161, 161, 170, 0.2);
+    --color-hover: rgba(251, 79, 147, 0.12);
+    --color-focus: rgba(251, 79, 147, 0.25);
+  }
+
+  * {
+    @apply border-[var(--color-border)];
+  }
+
+  body {
+    @apply bg-[var(--color-bg)] text-[var(--color-text)] antialiased;
+  }
+}
+
+/* Theme utility classes */
+@layer utilities {
+  .bg-theme {
+    @apply bg-[var(--color-bg)];
+  }
+  
+  .text-theme {
+    @apply text-[var(--color-text)];
+  }
+  
+  .accent-theme {
+    @apply text-[var(--color-accent)];
+  }
+  
+  .muted-theme {
+    @apply text-[var(--color-muted)];
+  }
+
+  .border-theme {
+    @apply border-[var(--color-border)];
+  }
+}
+
+/* Component styles */
+@layer components {
+  /* Button styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200;
+  }
+
+  .btn-primary {
+    @apply bg-[var(--color-accent)] text-white hover:opacity-90;
+  }
+
+  .btn-secondary {
+    @apply bg-[var(--color-hover)] text-[var(--color-text)] hover:bg-[var(--color-border)];
+  }
+
+  /* Form styles */
+  .input {
+    @apply w-full px-3 py-2 rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] 
+           focus:outline-none focus:ring-2 focus:ring-[var(--color-focus)];
+  }
+
+  /* Card styles */
+  .card {
+    @apply bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg p-4;
+  }
+
+  /* Status badge styles */
+  .status {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-pending {
+    @apply bg-[var(--color-hover)] text-[var(--color-muted)];
+  }
+
+  .status-active {
+    @apply bg-[var(--color-focus)] text-[var(--color-accent)];
+  }
+
+  .status-completed {
+    @apply bg-[var(--color-focus)] text-[var(--color-accent)];
+  }
+
+  .status-cancelled {
+    @apply bg-[var(--color-hover)] text-[var(--color-muted)];
+  }
+}
+
+/* Map styles */
+.leaflet-container {
+  @apply h-[400px] w-full rounded-lg border border-[var(--color-border)];
+}
+
+.leaflet-popup-content-wrapper {
+  @apply bg-[var(--color-bg)] text-[var(--color-text)] shadow-lg;
+}
+
+.leaflet-popup-tip {
+  @apply bg-[var(--color-bg)];
+}
+
+/* Loading spinner */
+.loading-spinner {
+  @apply inline-block w-4 h-4 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin;
+}
+
+/* Animation */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
