@@ -140,9 +140,12 @@ export default function RiderDashboard() {
     try {
       if (socket) {
         socket.emit('accept-ride', { rideId, riderId: user?.id });
+         // Remove the accepted ride from pending list immediately
+      
         toast.success('Ride accepted!');
         fetchRides();
-        fetchPendingRides();
+        await fetchPendingRides()
+       setPendingRides((prev) => prev.filter((ride) => ride._id !== rideId));
       }
     } catch (error) {
       toast.error('Failed to accept ride');
