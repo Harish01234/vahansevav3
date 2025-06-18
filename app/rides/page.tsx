@@ -11,6 +11,8 @@ import { Car, MapPin, Clock, DollarSign, LogOut, ArrowLeft } from 'lucide-react'
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 
 interface Ride {
   _id: string;
@@ -40,6 +42,20 @@ interface Ride {
   notes?: string;
 }
 
+const AnimateOnScroll = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => {
+  const [ref, inView] = useInView({ threshold: 0.15, triggerOnce: false });
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 30 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.6, delay }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 export default function Rides() {
   const { user, logout, token } = useAuth();
   const { socket } = useSocket();
@@ -52,13 +68,12 @@ export default function Rides() {
       router.push('/login');
       return;
     }
-
     fetchRides();
   }, [user, router, token]);
 
   useEffect(() => {
     if (socket) {
-      socket.on('ride-assigned', (data) => {
+      socket.on('ride-assigned', () => {
         toast.success('Rider assigned to your ride!');
         fetchRides();
       });
@@ -98,12 +113,12 @@ export default function Rides() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'bg-[var(--color-warning)] text-[var(--color-warning-text)]';
-      case 'assigned': return 'bg-[var(--color-info)] text-[var(--color-info-text)]';
-      case 'en_route': return 'bg-[var(--color-accent)] text-white';
-      case 'completed': return 'bg-[var(--color-success)] text-[var(--color-success-text)]';
-      case 'cancelled': return 'bg-[var(--color-error)] text-[var(--color-error-text)]';
-      default: return 'bg-[var(--color-muted)] text-[var(--color-muted-text)]';
+      case 'pending': return 'bg-yellow-200 text-yellow-800';
+      case 'assigned': return 'bg-blue-200 text-blue-800';
+      case 'en_route': return 'bg-purple-500 text-white';
+      case 'completed': return 'bg-green-200 text-green-800';
+      case 'cancelled': return 'bg-red-200 text-red-800';
+      default: return 'bg-gray-200 text-gray-800';
     }
   };
 
@@ -120,7 +135,7 @@ export default function Rides() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center animate-pulse">
         <div className="text-center">
           <div className="loading-spinner w-8 h-8 mx-auto mb-4" />
           <p className="text-[var(--color-muted)]">Loading your rides...</p>
@@ -131,7 +146,6 @@ export default function Rides() {
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">
-      {/* Header */}
       <header className="border-b border-[var(--color-border)] bg-[var(--color-bg)] backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -141,7 +155,7 @@ export default function Rides() {
               </Button>
             </Link>
             <div className="flex items-center space-x-2">
-              <Car className="w-8 h-8 text-[var(--color-accent)]" />
+              <Car className="w-8 h-8 text-[var(--color-accent)] animate-pulse" />
               <span className="text-2xl font-bold text-[var(--color-text)]">VahanSeva</span>
             </div>
           </div>
@@ -160,17 +174,31 @@ export default function Rides() {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2 text-[var(--color-text)]">My Rides</h1>
-            <p className="text-[var(--color-muted)]">
-              Track your ride history and current bookings
-            </p>
-          </div>
+          <AnimateOnScroll>
+            <div className="text-center mb-12">
+              <motion.h1
+                className="text-4xl font-bold mb-2 text-[var(--color-text)]"
+                initial={{ opacity: 0, y: -20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                My Rides
+              </motion.h1>
+              <motion.p
+                className="text-[var(--color-muted)]"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Track your ride history and current bookings
+              </motion.p>
+            </div>
+          </AnimateOnScroll>
 
           {rides.length === 0 ? (
             <Card className="text-center py-12 bg-[var(--color-bg)] border-[var(--color-border)]">
               <CardContent>
-                <Car className="w-16 h-16 mx-auto mb-4 text-[var(--color-muted)]" />
+                <Car className="w-16 h-16 mx-auto mb-4 text-[var(--color-muted)] animate-bounce" />
                 <h3 className="text-xl font-semibold mb-2 text-[var(--color-text)]">No rides yet</h3>
                 <p className="text-[var(--color-muted)] mb-4">
                   Book your first ride to get started!
@@ -181,91 +209,90 @@ export default function Rides() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {rides.map((ride) => (
-                <Card 
-                  key={ride._id} 
-                  className="hover:shadow-lg transition-shadow bg-[var(--color-bg)] border-[var(--color-border)]"
-                >
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="flex items-center text-[var(--color-text)]">
-                          <Car className="w-5 h-5 mr-2" />
-                          Ride #{ride._id.slice(-6)}
-                        </CardTitle>
-                        <CardDescription className="text-[var(--color-muted)]">
-                          {new Date(ride.createdAt).toLocaleDateString()} at{' '}
-                          {new Date(ride.createdAt).toLocaleTimeString()}
-                        </CardDescription>
+            <div className="space-y-8">
+              {rides.map((ride, index) => (
+                <AnimateOnScroll key={ride._id} delay={index * 0.1}>
+                  <Card className="hover:shadow-lg transition-shadow bg-[var(--color-bg)] border-[var(--color-border)]">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="flex items-center text-[var(--color-text)]">
+                            <Car className="w-5 h-5 mr-2" />
+                            Ride #{ride._id.slice(-6)}
+                          </CardTitle>
+                          <CardDescription className="text-[var(--color-muted)]">
+                            {new Date(ride.createdAt).toLocaleDateString()} at{' '}
+                            {new Date(ride.createdAt).toLocaleTimeString()}
+                          </CardDescription>
+                        </div>
+                        <Badge className={getStatusColor(ride.status)}>
+                          {getStatusText(ride.status)}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusColor(ride.status)}>
-                        {getStatusText(ride.status)}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-start space-x-2">
-                          <MapPin className="w-4 h-4 mt-1 text-[var(--color-success)]" />
-                          <div>
-                            <p className="font-medium text-sm text-[var(--color-text)]">Pickup</p>
-                            <p className="text-sm text-[var(--color-muted)]">
-                              {ride.pickup.address}
-                            </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start space-x-2">
+                            <MapPin className="w-4 h-4 mt-1 text-[var(--color-success)]" />
+                            <div>
+                              <p className="font-medium text-sm text-[var(--color-text)]">Pickup</p>
+                              <p className="text-sm text-[var(--color-muted)]">
+                                {ride.pickup.address}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <MapPin className="w-4 h-4 mt-1 text-[var(--color-error)]" />
+                            <div>
+                              <p className="font-medium text-sm text-[var(--color-text)]">Drop</p>
+                              <p className="text-sm text-[var(--color-muted)]">
+                                {ride.drop.address}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-start space-x-2">
-                          <MapPin className="w-4 h-4 mt-1 text-[var(--color-error)]" />
-                          <div>
-                            <p className="font-medium text-sm text-[var(--color-text)]">Drop</p>
-                            <p className="text-sm text-[var(--color-muted)]">
-                              {ride.drop.address}
-                            </p>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="w-4 h-4 text-[var(--color-accent)]" />
+                            <span className="font-medium text-[var(--color-text)]">₹{ride.fare}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Clock className="w-4 h-4 text-[var(--color-accent)]" />
+                            <span className="text-sm text-[var(--color-text)]">
+                              {ride.distance} km • {ride.estimatedTime} min
+                            </span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <DollarSign className="w-4 h-4 text-[var(--color-accent)]" />
-                          <span className="font-medium text-[var(--color-text)]">₹{ride.fare}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Clock className="w-4 h-4 text-[var(--color-accent)]" />
-                          <span className="text-sm text-[var(--color-text)]">
-                            {ride.distance} km • {ride.estimatedTime} min
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {ride.assignedRiderId && (
-                      <div className="border-t border-[var(--color-border)] pt-4">
-                        <h4 className="font-medium mb-2 text-[var(--color-text)]">Rider Details</h4>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-[var(--color-text)]">{ride.assignedRiderId.name}</p>
-                            <p className="text-sm text-[var(--color-muted)]">
-                              {ride.assignedRiderId.vehicleInfo.model} • {ride.assignedRiderId.vehicleInfo.number}
-                            </p>
+                      {ride.assignedRiderId && (
+                        <div className="border-t border-[var(--color-border)] pt-4">
+                          <h4 className="font-medium mb-2 text-[var(--color-text)]">Rider Details</h4>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-[var(--color-text)]">{ride.assignedRiderId.name}</p>
+                              <p className="text-sm text-[var(--color-muted)]">
+                                {ride.assignedRiderId.vehicleInfo.model} • {ride.assignedRiderId.vehicleInfo.number}
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="border-[var(--color-border)] text-[var(--color-text)]">
+                              {ride.assignedRiderId.vehicleInfo.type}
+                            </Badge>
                           </div>
-                          <Badge variant="outline" className="border-[var(--color-border)] text-[var(--color-text)]">
-                            {ride.assignedRiderId.vehicleInfo.type}
-                          </Badge>
                         </div>
-                      </div>
-                    )}
+                      )}
 
-                    {ride.notes && (
-                      <div className="border-t border-[var(--color-border)] pt-4">
-                        <h4 className="font-medium mb-2 text-[var(--color-text)]">Notes</h4>
-                        <p className="text-sm text-[var(--color-muted)]">{ride.notes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      {ride.notes && (
+                        <div className="border-t border-[var(--color-border)] pt-4">
+                          <h4 className="font-medium mb-2 text-[var(--color-text)]">Notes</h4>
+                          <p className="text-sm text-[var(--color-muted)]">{ride.notes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </AnimateOnScroll>
               ))}
             </div>
           )}
