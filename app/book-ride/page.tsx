@@ -8,11 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Car, MapPin, Navigation, DollarSign, Clock, LogOut } from 'lucide-react';
+import { Car, Navigation, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { LocationSearch } from '@/components/location-search';
+import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
 const MapComponent = dynamic(() => import('@/components/map-component'), {
@@ -35,24 +36,22 @@ export default function BookRide() {
   const [drop, setDrop] = useState<LocationData>({ address: '', lat: 0, lng: 0 });
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]); // Delhi center
+  const [mapCenter, setMapCenter] = useState<[number, number]>([28.6139, 77.2090]);
 
   useEffect(() => {
+    if (user === null) return;
     if (!user || user.role !== 'user') {
       router.push('/login');
-      return;
     }
   }, [user, router]);
 
   const handleMapClick = async (lat: number, lng: number) => {
     try {
-      // Reverse geocoding to get address
       const response = await fetch(
         `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
       );
       const data = await response.json();
       const address = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-
       const locationData = { address, lat, lng };
 
       if (!pickup.lat) {
@@ -78,14 +77,12 @@ export default function BookRide() {
 
   const handleBookRide = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!pickup.lat || !pickup.lng || !drop.lat || !drop.lng) {
       toast.error('Please set both pickup and drop locations');
       return;
     }
 
     setIsLoading(true);
-
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL}/api/rides/book`, {
         method: 'POST',
@@ -93,11 +90,7 @@ export default function BookRide() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          pickup,
-          drop,
-          notes
-        }),
+        body: JSON.stringify({ pickup, drop, notes }),
       });
 
       const data = await response.json();
@@ -129,40 +122,95 @@ export default function BookRide() {
     });
   }
 
-  if (user.role === 'user') {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-[var(--color-bg)]">
-        {/* Header */}
-        <header className="border-b border-[var(--color-border)] bg-[var(--color-bg)] backdrop-blur-sm sticky top-0 z-50">
-          <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <Car className="w-8 h-8 text-[var(--color-accent)]" />
-              <span className="text-2xl font-bold text-[var(--color-text)]">VahanSeva</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-[var(--color-muted)]">Welcome, {user?.name}</span>
-              <Link href="/rides">
-                <Button variant="ghost" className="text-[var(--color-text)] hover:bg-[var(--color-hover)]">My Rides</Button>
-              </Link>
-              <ThemeToggle />
-              <Button variant="ghost" size="icon" onClick={logout} className="text-[var(--color-text)] hover:bg-[var(--color-hover)]">
-                <LogOut className="w-4 h-4" />
-              </Button>
-            </div>
+      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
+        <div className="text-[var(--color-text)]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (user.role !== 'user') {
+    return (
+      <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
+        <div className="text-[var(--color-text)]">Unauthorized</div>
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      className="min-h-screen bg-[var(--color-bg)]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 1 }}
+    >
+      {/* Header */}
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-bg)] backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <Car className="w-8 h-8 text-[var(--color-accent)]" />
+            <span className="text-2xl font-bold text-[var(--color-text)]">VahanSeva</span>
           </div>
-        </header>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-[var(--color-muted)]">Welcome, {user?.name}</span>
+            <Link href="/rides">
+              <Button variant="ghost" className="text-[var(--color-text)] hover:bg-[var(--color-hover)]">My Rides</Button>
+            </Link>
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" onClick={logout} className="text-[var(--color-text)] hover:bg-[var(--color-hover)]">
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </header>
 
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-2 text-[var(--color-text)]">Book Your Ride</h1>
-              <p className="text-[var(--color-muted)]">
-                Select your pickup and drop locations to book a ride
-              </p>
-            </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          {/* Animated Heading */}
+          <div className="text-center mb-12">
+            <motion.h1
+              initial={{ opacity: 0, y: -30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              className="text-5xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(147,51,234,0.5)] tracking-tight"
+            >
+              Book Your Ride
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
+              className="mt-4 text-lg text-[var(--color-muted)] max-w-xl mx-auto leading-relaxed"
+            >
+              Choose your pickup and drop destinations to start a smooth and safe journey with{' '}
+              <span className="font-semibold text-[var(--color-accent)]">VahanSeva</span>.
+            </motion.p>
+          </div>
 
-            <div className="grid lg:grid-cols-2 gap-8">
-              {/* Booking Form */}
+          {/* Form + Map with Staggered Animation */}
+          <motion.div
+            className="grid lg:grid-cols-2 gap-8"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              hidden: {},
+              visible: {
+                transition: {
+                  staggerChildren: 0.3
+                }
+              }
+            }}
+          >
+            {/* Form Card */}
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 40 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
               <Card className="bg-[var(--color-bg)] border-[var(--color-border)]">
                 <CardHeader>
                   <CardTitle className="flex items-center text-[var(--color-text)]">
@@ -205,18 +253,28 @@ export default function BookRide() {
                       />
                     </div>
 
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-[var(--color-accent)] text-white hover:opacity-90" 
+                    <motion.button
+                      type="submit"
                       disabled={isLoading || !pickup.lat || !drop.lat}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full bg-[var(--color-accent)] text-white hover:opacity-90 px-4 py-2 rounded"
                     >
                       {isLoading ? 'Booking...' : 'Book Ride'}
-                    </Button>
+                    </motion.button>
                   </form>
                 </CardContent>
               </Card>
+            </motion.div>
 
-              {/* Map */}
+            {/* Map Section */}
+            <motion.div
+              variants={{
+                hidden: { opacity: 0, y: 40 },
+                visible: { opacity: 1, y: 0 }
+              }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
               <div className="h-[600px] rounded-lg overflow-hidden border border-[var(--color-border)]">
                 <MapComponent
                   center={mapCenter}
@@ -225,16 +283,10 @@ export default function BookRide() {
                   className="h-full w-full"
                 />
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center">
-      <div className="text-[var(--color-text)]">Loading...</div>
-    </div>
+    </motion.div>
   );
 }

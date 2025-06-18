@@ -12,6 +12,7 @@ import { Car, User } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -24,13 +25,14 @@ export default function Register() {
     vehicleModel: '',
     vehicleNumber: ''
   });
+
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -61,9 +63,7 @@ export default function Register() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_SOCKET_URL}/api/auth/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -72,16 +72,11 @@ export default function Register() {
       if (response.ok) {
         login(data.user, data.token);
         toast.success('Registration successful!');
-        
-        if (data.user.role === 'rider') {
-          router.push('/rider-dashboard');
-        } else {
-          router.push('/book-ride');
-        }
+        router.push(data.user.role === 'rider' ? '/rider-dashboard' : '/book-ride');
       } else {
         toast.error(data.message || 'Registration failed');
       }
-    } catch (error) {
+    } catch {
       toast.error('Network error. Please try again.');
     } finally {
       setIsLoading(false);
@@ -89,8 +84,19 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <motion.div
+      className="min-h-screen bg-[var(--color-bg)] flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 30 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="w-full max-w-md"
+      >
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <Link href="/" className="flex items-center space-x-2">
@@ -100,164 +106,150 @@ export default function Register() {
           <ThemeToggle />
         </div>
 
-        <Card className="w-full bg-[var(--color-bg)] border-[var(--color-border)]">
+        <Card className="w-full bg-[var(--color-bg)] border-[var(--color-border)] shadow-xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-[var(--color-text)]">Create Account</CardTitle>
-            <CardDescription className="text-[var(--color-muted)]">
-              Join VahanSeva and start your journey today
-            </CardDescription>
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <CardTitle className="text-2xl text-[var(--color-text)]">Create Account</CardTitle>
+              <CardDescription className="text-[var(--color-muted)]">
+                Join VahanSeva and start your journey today
+              </CardDescription>
+            </motion.div>
           </CardHeader>
+
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-[var(--color-text)]">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                />
-              </div>
+            <motion.form onSubmit={handleSubmit} className="space-y-4">
+              {[
+                { id: 'name', label: 'Full Name', type: 'text' },
+                { id: 'email', label: 'Email', type: 'email' },
+                { id: 'password', label: 'Password', type: 'password' },
+                { id: 'confirmPassword', label: 'Confirm Password', type: 'password' },
+              ].map(({ id, label, type }, index) => (
+                <motion.div
+                  key={id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  className="space-y-2"
+                >
+                  <Label htmlFor={id} className="text-[var(--color-text)]">{label}</Label>
+                  <Input
+                    id={id}
+                    type={type}
+                    value={formData[id as keyof typeof formData] as string}
+                    onChange={(e) => setFormData({ ...formData, [id]: e.target.value })}
+                    required
+                    className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
+                  />
+                </motion.div>
+              ))}
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[var(--color-text)]">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-[var(--color-text)]">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-[var(--color-text)]">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                  className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                />
-              </div>
-
-              <div className="space-y-2">
+              {/* Role Selector */}
+              <motion.div
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.5 }}
+                className="space-y-2"
+              >
                 <Label className="text-[var(--color-text)]">I want to</Label>
                 <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    type="button"
-                    variant={formData.role === 'user' ? 'default' : 'outline'}
-                    className={`justify-start ${
-                      formData.role === 'user' 
-                        ? 'bg-[var(--color-accent)] text-white hover:opacity-90' 
-                        : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-hover)]'
-                    }`}
-                    onClick={() => setFormData({ ...formData, role: 'user' })}
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Book Rides
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={formData.role === 'rider' ? 'default' : 'outline'}
-                    className={`justify-start ${
-                      formData.role === 'rider' 
-                        ? 'bg-[var(--color-accent)] text-white hover:opacity-90' 
-                        : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-hover)]'
-                    }`}
-                    onClick={() => setFormData({ ...formData, role: 'rider' })}
-                  >
-                    <Car className="w-4 h-4 mr-2" />
-                    Drive & Earn
-                  </Button>
+                  {[
+                    { value: 'user', label: 'Book Rides', icon: User },
+                    { value: 'rider', label: 'Drive & Earn', icon: Car },
+                  ].map(({ value, label, icon: Icon }) => (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant={formData.role === value ? 'default' : 'outline'}
+                      onClick={() => setFormData({ ...formData, role: value as 'user' | 'rider' })}
+                      className={`justify-start ${
+                        formData.role === value
+                          ? 'bg-[var(--color-accent)] text-white hover:opacity-90'
+                          : 'border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-hover)]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {label}
+                    </Button>
+                  ))}
                 </div>
-              </div>
+              </motion.div>
 
-              {formData.role === 'rider' && (
-                <div className="space-y-4 pt-4 border-t border-[var(--color-border)]">
-                  <h3 className="font-semibold text-[var(--color-text)]">Vehicle Information</h3>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleType" className="text-[var(--color-text)]">Vehicle Type</Label>
-                    <Select value={formData.vehicleType} onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}>
-                      <SelectTrigger className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]">
-                        <SelectValue placeholder="Select vehicle type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[var(--color-bg)] border-[var(--color-border)]">
-                        <SelectItem value="car" className="text-[var(--color-text)]">Car</SelectItem>
-                        <SelectItem value="bike" className="text-[var(--color-text)]">Bike</SelectItem>
-                        <SelectItem value="auto" className="text-[var(--color-text)]">Auto Rickshaw</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Rider Vehicle Info */}
+              <AnimatePresence>
+                {formData.role === 'rider' && (
+                  <motion.div
+                    key="vehicle-info"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ delay: 0.2 }}
+                    className="space-y-4 pt-4 border-t border-[var(--color-border)]"
+                  >
+                    <h3 className="font-semibold text-[var(--color-text)]">Vehicle Information</h3>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleModel" className="text-[var(--color-text)]">Vehicle Model</Label>
-                    <Input
-                      id="vehicleModel"
-                      type="text"
-                      value={formData.vehicleModel}
-                      onChange={(e) => setFormData({ ...formData, vehicleModel: e.target.value })}
-                      required
-                      className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicleType" className="text-[var(--color-text)]">Vehicle Type</Label>
+                      <Select value={formData.vehicleType} onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}>
+                        <SelectTrigger className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)]">
+                          <SelectValue placeholder="Select vehicle type" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-[var(--color-bg)] border-[var(--color-border)]">
+                          <SelectItem value="car" className="text-[var(--color-text)]">Car</SelectItem>
+                          <SelectItem value="bike" className="text-[var(--color-text)]">Bike</SelectItem>
+                          <SelectItem value="auto" className="text-[var(--color-text)]">Auto Rickshaw</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleNumber" className="text-[var(--color-text)]">Vehicle Number</Label>
-                    <Input
-                      id="vehicleNumber"
-                      type="text"
-                      value={formData.vehicleNumber}
-                      onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value })}
-                      required
-                      className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <Button 
-                type="submit" 
-                className="w-full bg-[var(--color-accent)] text-white hover:opacity-90" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="loading-spinner mr-2" />
-                    Creating Account...
-                  </>
-                ) : (
-                  'Create Account'
+                    {['vehicleModel', 'vehicleNumber'].map((field) => (
+                      <div className="space-y-2" key={field}>
+                        <Label htmlFor={field} className="text-[var(--color-text)]">
+                          {field === 'vehicleModel' ? 'Vehicle Model' : 'Vehicle Number'}
+                        </Label>
+                        <Input
+                          id={field}
+                          type="text"
+                          value={formData[field as keyof typeof formData]}
+                          onChange={(e) => setFormData({ ...formData, [field]: e.target.value })}
+                          required
+                          className="bg-[var(--color-bg)] border-[var(--color-border)] text-[var(--color-text)] focus:ring-[var(--color-focus)]"
+                        />
+                      </div>
+                    ))}
+                  </motion.div>
                 )}
-              </Button>
-            </form>
+              </AnimatePresence>
 
-            <div className="mt-4 text-center text-sm text-[var(--color-muted)]">
+              {/* Submit Button */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}>
+                <Button
+                  type="submit"
+                  className="w-full bg-[var(--color-accent)] text-white hover:opacity-90"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                </Button>
+              </motion.div>
+            </motion.form>
+
+            <motion.div
+              className="mt-4 text-center text-sm text-[var(--color-muted)]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+            >
               Already have an account?{' '}
               <Link href="/login" className="text-[var(--color-accent)] hover:underline">
                 Sign in
               </Link>
-            </div>
+            </motion.div>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

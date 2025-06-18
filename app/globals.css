@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Light theme - core colors */
-    --color-bg: #d4d4d4;
-    --color-text: #1a1a1a;
-    --color-accent: #fb4f93;
+    --color-bg: #EEEEEE;
+    --color-text: #333446;
+    --color-accent: #162ada;
     --color-muted: #6b7280;
     
     /* Light theme - derived colors with opacity */
@@ -20,7 +20,7 @@
     /* Dark theme - core colors */
     --color-bg: #18181b;
     --color-text: #f8fafc;
-    --color-accent: #fb4f93;
+    --color-accent: #4ffbf2;
     --color-muted: #a1a1aa;
     
     /* Dark theme - derived colors with opacity */
